@@ -49,19 +49,22 @@ public:
 
     typedef std::function<bool(std::string topic, std::string message)> NotifyCallbackFunction;
 
-    bool                   createPublishTopic(const std::string& topicName, const std::string& mqttPath, MqttTopicTypes topicType = MqttTopicTypes::SENSOR);
-    bool                   removePublishTopic(const std::string& topicName);
-    bool                   createSubscribeTopic(const std::string& topicName, const std::string& mqttPath, MqttTopicTypes topicType = MqttTopicTypes::SENSOR) {/*********************/ }
-    bool                   removeSubscribeTopic(const std::string& topicName) { /********************/ }   
-    bool                   addNotifyCallback(const std::string& topicName, NotifyCallbackFunction callback);
-    bool                   removeNotifyCallback(const std::string& topicName);
+    bool createPublishTopic(const std::string& topicName, const std::string& mqttPath, MqttTopicTypes topicType = MqttTopicTypes::SENSOR);
+    bool removePublishTopic(const std::string& topicName);
+
+    bool createSubscribeTopic(const std::string& topicName, const std::string& mqttPath, MqttTopicTypes topicType = MqttTopicTypes::SENSOR);
+    bool removeSubscribeTopic(const std::string& topicName);
+
+    bool addNotifyCallback(const std::string& topicName, NotifyCallbackFunction callback);
+    bool removeNotifyCallback(const std::string& topicName);
+
     NotifyCallbackFunction notifyCallback(const std::string& topicName);
 
     bool publish(const std::string& topicName, const std::string& message);
 
-protected:
-    void incomingMessageCallback(char* topic, byte* payload, unsigned int length);
+    bool waitForMessages(int timeout = 200);
 
+protected:
     /**
      * MQTT topic properties
      */
@@ -69,7 +72,7 @@ protected:
     {
         MqttTopicData() {}
         MqttTopicData(const MqttTopicData& ref) :
-            shortName(ref.shortName),
+            topicName(ref.topicName),
             pathName(ref.pathName),
             topicType(ref.topicType),
             publishHandler(ref.publishHandler),
@@ -78,13 +81,17 @@ protected:
         {
         }
 
-        std::string                              shortName;
+        std::string                              topicName;
         std::string                              pathName;
         MqttTopicTypes                           topicType;
         std::shared_ptr<Adafruit_MQTT_Publish>   publishHandler;
         std::shared_ptr<Adafruit_MQTT_Subscribe> subscribeHandler;
         NotifyCallbackFunction                   notifyCallback; // used to notify about incoming MQTT messages and/or state changes
     };
+
+    bool createMqttTopic(std::map<std::string, MqttTopicData>& topicList, const std::string& topicName, const std::string& mqttPath, MqttTopicTypes topicType, bool subscribe);
+
+    void incomingMessageCallback(MqttTopicData& data, const char* lastRead);
 
 private:
     std::shared_ptr<Adafruit_MQTT_Client> mqttClient;

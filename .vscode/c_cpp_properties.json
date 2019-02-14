@@ -3,13 +3,13 @@
         {
             "name": "Win32",
             "includePath": [
+                "C:\\Daten\\Documents\\Arduino\\libraries\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\tools\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\cores\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\tools\\sdk\\include\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\ESP8266WiFi\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\variants\\nodemcu\\**",
-                "C:\\Daten\\Sources\\Arduino\\libraries\\**",
                 "C:\\Daten\\Sources\\Arduino-VSC\\**"
             ],
             "forcedInclude": [],
@@ -18,13 +18,13 @@
             "cppStandard": "c++17",
             "browse": {
                 "path": [
+                    "C:\\Daten\\Documents\\Arduino\\libraries\\**",
                     "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\tools\\**",
                     "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\cores\\**",
                     "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\tools\\sdk\\include\\**",
                     "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\**",
                     "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\ESP8266WiFi\\**",
                     "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\variants\\nodemcu\\**",
-                    "C:\\Daten\\Sources\\Arduino\\libraries\\**",
                     "C:\\Daten\\Sources\\Arduino-VSC\\**"
                 ],
                 "limitSymbolsToIncludedHeaders": false,

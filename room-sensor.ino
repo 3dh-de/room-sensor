@@ -9,36 +9,39 @@ WiFiClient client;
 // or... use WiFiFlientSecure for SSL
 //WiFiClientSecure client;
 
-// Setup the MQTT client class by passing in the WiFi client and MQTT server and login details.
-class MqttClient;
-class SensorDHT;
-
+// MQTT client
 #include "MqttClient.h"
 #include "secrets.h"
-
 MqttClient mqttClient(&client, MQTT_SERVER, MQTT_SERVERPORT, MQTT_USERNAME, MQTT_KEY);
 
-// OLED SSD1306 128x64 ---------------------------------------
-
-#include "SensorDHT.h"
-
+// OLED display
 #define UPDATE_TIMEOUT 2000
 #define DISPLAY_UPDATE_DELAY 10000
 
 #define I2C_SCL D1
 #define I2C_SDA D2
+#define OLED_RESET LED_BUILTIN
 
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
-#define OLED_RESET LED_BUILTIN
-Adafruit_SSD1306 display(OLED_RESET);
-
-#if (SSD1306_LCDHEIGHT != 64)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif
-
+// DHT22 sensor
+#include "SensorDHT.h"
 SensorDHT sensor(DHT_IN); // setup temp sensor
+
+/**
+ * Callback for switch relay topic
+ */
+bool handleToggleSwitchMessage(std::string topicName, std::string message)
+{
+    Serial.printf("[main] handle switch message for '%s' with content '%s'\n", topicName.c_str(), message.c_str());
+
+    bool enabledState = (std::string(message) == "true");
+    // --- relays.togglePort(0, enabledState);
+    Serial.printf("[main] switch '%s' set to '%s'\n", topicName.c_str(), enabledState ? "ON" : "OFF");
+    return true;
+}
 
 /**
  * Initial setup of serial debug console and connections
@@ -82,9 +85,13 @@ void setup()
 
     delay(1000);
 
-    mqttClient.createPublishTopic("temperature", "/arbeitszimmer/humidity", MqttClient::SENSOR);
-    mqttClient.createPublishTopic("humidity", "/arbeitszimmer/temperature", MqttClient::SENSOR);
+    mqttClient.createPublishTopic("temperature", "/arbeitszimmer/temperature", MqttClient::SENSOR);
+    mqttClient.createPublishTopic("humidity", "/arbeitszimmer/humidity", MqttClient::SENSOR);
     mqttClient.createPublishTopic("lights", "/arbeitszimmer/lights", MqttClient::SWITCH);
+    mqttClient.createSubscribeTopic("lights", "/arbeitszimmer/lights/set", MqttClient::SWITCH);
+    mqttClient.createSubscribeTopic("lights_available", "/arbeitszimmer/lights/available", MqttClient::SWITCH);
+
+    mqttClient.addNotifyCallback("lights", &handleToggleSwitchMessage);
 
     // first read often gets invalid values
     sensor.temperature();
@@ -142,5 +149,13 @@ void loop()
         Serial.println(F("OK!"));
     }
 
-    delay(DISPLAY_UPDATE_DELAY);
+    if (mqttClient.connected()) {
+        if (!mqttClient.waitForMessages(DISPLAY_UPDATE_DELAY)) {
+            Serial.println("[mqtt] wait for messages aborted");
+        } else {
+            Serial.println("[mqtt] wait for messages successful");
+        }
+    } else {
+        delay(DISPLAY_UPDATE_DELAY);
+    }
 }

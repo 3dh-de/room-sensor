@@ -1,6 +1,6 @@
 #include "MqttClient.h"
-#include "Adafruit_MQTT.h"
-#include "Adafruit_MQTT_Client.h"
+#include <Adafruit_MQTT.h>
+#include <Adafruit_MQTT_Client.h>
 #include <ESP8266WiFi.h>
 
 /**
@@ -43,14 +43,14 @@ bool MqttClient::connect(void)
     if (mqttClient->connected()) // Stop if already connected.
         return true;
 
-    Serial.print("Connecting to MQTT... ");
+    Serial.print("[mqtt] connecting to MQTT server... ");
 
     int8_t  ret;
     uint8_t retries = MQTT_RECONNECT_RETRIES;
     while ((ret = mqttClient->connect()) != 0) // connect will return 0 for connected
     {
         Serial.println(mqttClient->connectErrorString(ret));
-        Serial.println("Retrying MQTT connection...");
+        Serial.println("[mqtt] retrying client connection...");
         mqttClient->disconnect();
         if (--retries == 0) {
             break;
@@ -58,7 +58,7 @@ bool MqttClient::connect(void)
         delay(MQTT_TIMEOUT);
     }
     bool online = connected();
-    Serial.println(online ? "MQTT connected successfully" : "MQTT connection failed!");
+    Serial.println(online ? "[mqtt] client connected successfully" : "[mqtt] client connection failed!");
     return online;
 }
 
@@ -74,7 +74,7 @@ bool MqttClient::disconnect(void)
 }
 
 /**
- * Register given MQTT topic (the MQTT publish path name) with given short name
+ * Register given MQTT topic (the MQTT publish path name) to publish (send) MQTT messages
  *
  * @param topicName - string with short name for given MQTT publish topic
  * @param mqttPath  - string with full MQTT publish topic name in format "maintopic/topic/subtopic"
@@ -83,8 +83,66 @@ bool MqttClient::disconnect(void)
  */
 bool MqttClient::createPublishTopic(const std::string& topicName, const std::string& mqttPath, MqttTopicTypes topicType)
 {
-    if (publishTopics.find(topicName) != publishTopics.end() || topicName.length() < 1) {
-        Serial.printf("error: createPublishTopic failed for topic '%s' - given topic name is already registered!\n", topicName.c_str());
+    return createMqttTopic(publishTopics, topicName, mqttPath, topicType, false);
+}
+
+/**
+ * Removes given publish topic
+ */
+bool MqttClient::removePublishTopic(const std::string& topicName)
+{
+    if (publishTopics.find(topicName) == publishTopics.end()) {
+        Serial.printf("[mqtt] error: removePublishTopic failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
+        return false;
+    }
+    publishTopics.erase(topicName);
+    return true;
+}
+
+/**
+ * Register given MQTT topic (the MQTT subscribe path name) to listen for incoming MQTT messages
+ *
+ * @param topicName - string with short name for given MQTT subscribe topic
+ * @param mqttPath  - string with full MQTT subscribe topic name in format "maintopic/topic/subtopic"
+ * 
+ * @return false when topic already exists and on any error
+ */
+bool MqttClient::createSubscribeTopic(const std::string& topicName, const std::string& mqttPath, MqttTopicTypes topicType)
+{
+    return createMqttTopic(subscribeTopics, topicName, mqttPath, topicType, true);
+}
+
+/**
+ * Removes given subscription topic
+ */
+bool MqttClient::removeSubscribeTopic(const std::string& topicName)
+{
+    if (publishTopics.find(topicName) == publishTopics.end()) {
+        Serial.printf("[mqtt] error: removePublishTopic failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
+        return false;
+    }
+    if (mqttClient && publishTopics.at(topicName).subscribeHandler) {
+        mqttClient->unsubscribe(publishTopics.at(topicName).subscribeHandler.get());
+    }
+    subscribeTopics.erase(topicName);
+    return true;
+}
+
+/**
+ * Register given MQTT topic (the MQTT publish path name) with given short name
+ *
+ * @param topicList - target list of publish or subscribe topics to store results
+ * @param topicName - string with short name for given MQTT publish topic
+ * @param mqttPath  - string with full MQTT publish topic name in format "maintopic/topic/subtopic"
+ * @param subscribe - toggles between publish and subscribe topics
+ * 
+ * @return false when topic already exists and on any error
+ */
+bool MqttClient::createMqttTopic(std::map<std::string, MqttTopicData>& topicList, const std::string& topicName, const std::string& mqttPath, MqttTopicTypes topicType, bool subscribe)
+{
+    std::string mode = subscribe ? "subscribe" : "publish";
+    if (topicList.find(topicName) != topicList.end() || topicName.length() < 1) {
+        Serial.printf("[mqtt] error: create %s topic failed for topic '%s' - given topic name is already registered!\n", mode.c_str(), topicName.c_str());
         return false;
     }
 
@@ -98,32 +156,24 @@ bool MqttClient::createPublishTopic(const std::string& topicName, const std::str
         prefix = "/switch/";
         break;
     default:
-        Serial.printf("error: invalid MqttTopicType given to createPublishTopic for topic '%s'!", topicName.c_str());
+        Serial.printf("[mqtt] error: invalid MqttTopicType given to create %s topic for topic '%s'!", mode.c_str(), topicName.c_str());
         return false;
     }
 
     MqttTopicData data;
-    data.shortName      = topicName;
-    data.pathName       = stringReplaceAll(std::string("/" + prefix + "/" + mqttPath), "//", "/");
-    data.topicType      = topicType;
-    data.publishHandler = std::shared_ptr<Adafruit_MQTT_Publish>(new Adafruit_MQTT_Publish(mqttClient.get(), data.pathName.c_str()));
-
-    publishTopics[topicName] = data;
-
-    Serial.printf("created MQTT publish topic '%s' with MQTT path '%s'\n", data.shortName.c_str(), data.pathName.c_str());
-}
-
-/**
- * Removes given publish topic
- */
-bool MqttClient::removePublishTopic(const std::string& topicName)
-{
-    if (publishTopics.find(topicName) == publishTopics.end()) {
-        Serial.printf("error: removePublishTopic failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
-        return false;
+    data.topicName = topicName;
+    data.pathName  = stringReplaceAll(std::string("/" + prefix + "/" + mqttPath), "//", "/");
+    data.topicType = topicType;
+    if (subscribe) {
+        data.subscribeHandler = std::shared_ptr<Adafruit_MQTT_Subscribe>(new Adafruit_MQTT_Subscribe(mqttClient.get(), data.pathName.c_str()));
+        mqttClient->subscribe(data.subscribeHandler.get());
+    } else {
+        data.publishHandler = std::shared_ptr<Adafruit_MQTT_Publish>(new Adafruit_MQTT_Publish(mqttClient.get(), data.pathName.c_str()));
     }
-    publishTopics.erase(topicName);
-    return true;
+
+    topicList[topicName] = data;
+
+    Serial.printf("[mqtt] created %s topic '%s' with MQTT path '%s'\n", mode.c_str(), data.topicName.c_str(), data.pathName.c_str());
 }
 
 /**
@@ -133,11 +183,11 @@ bool MqttClient::removePublishTopic(const std::string& topicName)
  */
 bool MqttClient::addNotifyCallback(const std::string& topicName, NotifyCallbackFunction callback)
 {
-    if (publishTopics.find(topicName) == publishTopics.end()) {
-        Serial.printf("error: addNotifyCallback failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
+    if (subscribeTopics.find(topicName) == subscribeTopics.end()) {
+        Serial.printf("[mqtt] error: addNotifyCallback failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
         return false;
     }
-    publishTopics.at(topicName).notifyCallback = callback;
+    subscribeTopics.at(topicName).notifyCallback = callback;
     return true;
 }
 
@@ -146,11 +196,11 @@ bool MqttClient::addNotifyCallback(const std::string& topicName, NotifyCallbackF
  */
 bool MqttClient::removeNotifyCallback(const std::string& topicName)
 {
-    if (publishTopics.find(topicName) == publishTopics.end()) {
-        Serial.printf("error: removeNotifyCallback failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
+    if (subscribeTopics.find(topicName) == subscribeTopics.end()) {
+        Serial.printf("[mqtt] error: removeNotifyCallback failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
         return false;
     }
-    publishTopics.at(topicName).notifyCallback = nullptr;
+    subscribeTopics.at(topicName).notifyCallback = nullptr;
     return true;
 }
 
@@ -159,15 +209,15 @@ bool MqttClient::removeNotifyCallback(const std::string& topicName)
  */
 MqttClient::NotifyCallbackFunction MqttClient::notifyCallback(const std::string& topicName)
 {
-    if (publishTopics.find(topicName) == publishTopics.end()) {
-        Serial.printf("error: notifyCallback failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
+    if (subscribeTopics.find(topicName) == subscribeTopics.end()) {
+        Serial.printf("[mqtt] error: notifyCallback failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
         return nullptr;
     }
-    if (!publishTopics.at(topicName).notifyCallback) {
-        Serial.printf("error: notifyCallback failed for topic '%s' - invalid callback function!\n", topicName.c_str());
+    if (!subscribeTopics.at(topicName).notifyCallback) {
+        Serial.printf("[mqtt] error: notifyCallback failed for topic '%s' - invalid callback function!\n", topicName.c_str());
         return nullptr;
     }
-    return publishTopics.at(topicName).notifyCallback;
+    return subscribeTopics.at(topicName).notifyCallback;
 }
 
 /**
@@ -176,55 +226,72 @@ MqttClient::NotifyCallbackFunction MqttClient::notifyCallback(const std::string&
 bool MqttClient::publish(const std::string& topicName, const std::string& message)
 {
     if (!connect()) {
-        Serial.printf("error: publish failed for topic '%s' - connection failed!\n", topicName.c_str());
+        Serial.printf("[mqtt] error: publish failed for topic '%s' - connection failed!\n", topicName.c_str());
         return false;
     }
     if (publishTopics.find(topicName) == publishTopics.end()) {
-        Serial.printf("error: publish failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
+        Serial.printf("[mqtt] error: publish failed for topic '%s' - given topic name is unknown!\n", topicName.c_str());
         return false;
     }
     if (!publishTopics.at(topicName).publishHandler) {
-        Serial.printf("error: publish failed for topic '%s' - invalid publish handler object!\n", topicName.c_str());
+        Serial.printf("[mqtt] error: publish failed for topic '%s' - invalid publish handler object!\n", topicName.c_str());
         return false;
     }
     if (!publishTopics.at(topicName).publishHandler->publish(message.c_str())) {
-        Serial.printf("error: publish failed for topic '%s' - error on sending message '%s'\n", topicName.c_str(), message.c_str());
+        Serial.printf("[mqtt] error: publish failed for topic '%s' - error on sending message '%s'\n", topicName.c_str(), message.c_str());
         return false;
     }
     return true;
 }
 
 /**
+ * Wait for incoming messages and check if they are for subscribed topics 
+ * 
+ * @param timeout  - polling timeout in milliseconds
+ * @return  true for received messages, false for wait without incoming packets
+ */
+bool MqttClient::waitForMessages(int timeout)
+{
+    if (!connect()) {
+        Serial.printf("[mqtt] error: wait for messages failed - client not connected!\n");
+        return false;
+    }
+
+    Adafruit_MQTT_Subscribe* subscription;
+    while ((subscription = mqttClient->readSubscription(timeout))) {
+        Serial.printf("[mqtt] received incoming messages\n");
+
+        for (auto& pair : subscribeTopics) {
+            if (pair.second.subscribeHandler == nullptr) {
+                break;
+            }
+            std::shared_ptr<Adafruit_MQTT_Subscribe> handler = pair.second.subscribeHandler;
+            if (handler.get() == subscription) {
+                Serial.printf("[mqtt] received message for topic %s\n", pair.first.c_str());
+                incomingMessageCallback(pair.second, (const char*)handler->lastread);
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
  * Handle incoming MQTT messages
  */
-void MqttClient::incomingMessageCallback(char* topic, byte* payload, unsigned int length)
+void MqttClient::incomingMessageCallback(MqttTopicData& data, const char* lastRead)
 {
-    std::string tmp          = (const char*)payload;
-    bool        enabledState = (tmp == "true");
-    std::string topicStr     = topic;
+    bool enabledState = (std::string(lastRead) == "true");
 
-    Serial.printf("MQTT Message arrived [%s]\n", tmp.c_str());
+    Serial.printf("[mqtt] message for topic '%s' arrived: '%s'\n", data.topicName.c_str(), lastRead);
 
-    for (auto& pair : publishTopics) {
-        if (pair.first != topicStr /* --- handle second topic for [pathName]/available status here --- */) {
-            break;
-        }
+    if (data.publishHandler) {
+        std::string newMsg = std::string(enabledState ? "true" : "false");
+        data.publishHandler->publish(newMsg.c_str()); // send answer
+    }
 
-        MqttTopicData& data = pair.second;
-
-        if (data.publishHandler) {
-            std::string newMsg = topicStr + "/" + std::string(enabledState ? "true" : "false");
-            data.publishHandler->publish(newMsg.c_str()); // send answer
-        }
-
-        if (data.notifyCallback) {
-            data.notifyCallback(topic, tmp);
-        }
-
-        // --- relays.togglePort(0, enabledState);
-        Serial.print("switch '");
-        Serial.print(topic);
-        Serial.print("' set to ");
-        Serial.println(enabledState ? "ON" : "OFF");
+    if (data.notifyCallback) {
+        Serial.printf("[mqtt] calling notity function for topic '%s'\n", data.topicName.c_str());
+        data.notifyCallback(data.topicName, lastRead);
     }
 }
