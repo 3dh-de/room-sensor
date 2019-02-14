@@ -50,6 +50,10 @@ void setup()
 {
     Serial.begin(115200);
 
+    // run tests
+    TestTemperatureSensor testSensor;
+    testSensor.runTests();
+
     // MQTT
     // Connect to WiFi access point.
     Serial.println();
