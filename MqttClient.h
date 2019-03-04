@@ -44,7 +44,10 @@ public:
     {
         UNKNOWN = 0,
         SENSOR  = 10,
-        SWITCH  = 20
+        SWITCH  = 20,
+        COMMAND = 30,
+        STATUS  = 40,
+        HEARTBEAT = 50
     };
 
     typedef std::function<bool(std::string topic, std::string message)> NotifyCallbackFunction;
