@@ -15,13 +15,13 @@ public:
     bool isValidPort(int port);
     int  setCurrentPort(int port);
     int  currentPort(void) const { return currentPortNumber; }
-    int  availableRelays(void) const { ports.size(); }
+    int  availableRelays(void) const { outputPorts.size(); }
 
     int togglePort(bool state);
     int togglePort(int port, bool state);
 
 private:
-    std::vector<int> ports;
+    std::vector<int> outputPorts;
     int              currentPortNumber;
 };
 

@@ -1,5 +1,5 @@
 {
-    "C_Cpp.intelliSenseEngineFallback": "True",
+    "C_Cpp.intelliSenseEngineFallback": "Disabled",
     "C_Cpp.errorSquiggles": "Disabled",
     "editor.formatOnSave": true,
     "files.associations": {
