@@ -9,10 +9,11 @@
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\tools\\sdk\\include\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\ESP8266WiFi\\**",
-                "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\variants\\nodemcu\\**"
+                "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\variants\\nodemcu\\**",
+                "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\tools\\xtensa-lx106-elf-gcc\\1.20.0-26-gb404fb9-2\\xtensa-lx106-elf\\include\\c++\\4.8.2\\profile"
             ],
             "forcedInclude": [],
-            "intelliSenseMode": "msvc-x64",
+            "intelliSenseMode": "clang-x64",
             "cStandard": "c11",
             "cppStandard": "c++17",
             "browse": {
@@ -23,7 +24,8 @@
                     "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\tools\\sdk\\include\\**",
                     "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\**",
                     "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\ESP8266WiFi\\**",
-                    "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\variants\\nodemcu\\**"
+                    "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\variants\\nodemcu\\**",
+                    "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\tools\\xtensa-lx106-elf-gcc\\1.20.0-26-gb404fb9-2\\xtensa-lx106-elf\\include\\c++\\4.8.2\\profile"
                 ],
                 "limitSymbolsToIncludedHeaders": false,
                 "databaseFilename": ""

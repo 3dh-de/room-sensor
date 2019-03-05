@@ -29,7 +29,11 @@ Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 // DHT22 sensor
 #include "SensorDHT.h"
-SensorDHT sensor(DHT_IN); // setup temp sensor
+SensorDHT sensorDHT(DHT_IN); // setup temp sensor
+
+// DS18B20 sensor
+#include "SensorDS18B20.h"
+SensorDS18B20 sensorDS18B20;
 
 /**
  * Callback for switch relay topic
@@ -99,8 +103,8 @@ void setup()
     mqttClient.addNotifyCallback("lights", &handleToggleSwitchMessage);
 
     // first read often gets invalid values
-    sensor.temperature();
-    sensor.humidity();
+    sensorDHT.temperature();
+    sensorDHT.humidity();
 }
 
 /**
@@ -108,14 +112,16 @@ void setup()
  */
 void loop()
 {
-    float temperature = sensor.temperature();
-    float humidity    = sensor.humidity();
+    float temperature = sensorDHT.temperature();
+    float humidity    = sensorDHT.humidity();
+
+    sensorDS18B20.sensorsAvailable();
 
     display.clearDisplay();
     display.setCursor(8, 0);
     display.setTextColor(WHITE); // 'inverted' text
 
-    if (!sensor.isTemperatureValid() || !sensor.isHumidityValid()) {
+    if (!sensorDHT.isTemperatureValid() || !sensorDHT.isHumidityValid()) {
         delay(UPDATE_TIMEOUT);
         return;
     }

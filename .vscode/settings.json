@@ -3,6 +3,8 @@
     "C_Cpp.errorSquiggles": "Disabled",
     "editor.formatOnSave": true,
     "files.associations": {
+        "*.pde": "cpp",
+        "*.ino": "cpp",
         "array": "cpp",
         "*.tcc": "cpp",
         "cctype": "cpp",
@@ -35,6 +37,7 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "utility": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "strstream": "cpp"
     }
 }

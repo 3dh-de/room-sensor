@@ -1,19 +1,26 @@
 #ifndef TEMPERATURESENSOR_H
 #define TEMPERATURESENSOR_H
 
+#include <cmath>
+
 /**
  * Base class for temperature sensor
+ * 
+ * Invalid temperature and humidity values are returned as NaN floats (not a number) -
+ * which can be checked by isTemperatureValid() and isHumidityValid() or manually by
+ * calling std::isnan(temperature).
  */
 class TemperatureSensor
 {
 public:
-    enum TemperatureUnits {
+    enum TemperatureUnits
+    {
         CELSIUS_DEGREES    = 1,
         FAHRENHEIT_DEGREES = 2
     };
 
-    virtual bool isTemperatureValid(void) const { return temperatureInitialized; }
-    virtual bool isHumidityValid(void) const { return humidityInitialized; }
+    virtual bool isTemperatureValid(void) const { return temperatureInitialized && !std::isnan(temperatureValue); }
+    virtual bool isHumidityValid(void) const { return humidityInitialized && !std::isnan(humidityValue); }
 
     virtual void clearTemperature(void);
     virtual void clearHumidity(void);
@@ -31,8 +38,8 @@ public:
 
 private:
     TemperatureUnits temperatureUnitValue   = CELSIUS_DEGREES; // can be set to CELSIUS_DEGREES or FAHRENHEIT_DEGREES
-    float            temperatureValue       = 0.0;             // last temperature value in degrees of unit temperatureUnit
-    float            humidityValue          = 0.0;             // last humidity in percent
+    float            temperatureValue       = NAN;             // last temperature value in degrees of unit temperatureUnit
+    float            humidityValue          = NAN;             // last humidity in percent
     bool             temperatureInitialized = false;           // if FALSE the temperature values are invalid
     bool             humidityInitialized    = false;           // if FALSE the humidity values are invalid
 };
@@ -43,7 +50,7 @@ private:
 class TestTemperatureSensor
 {
 public:
-    bool runTests();
+    virtual bool runTests();
 
 private:
     TemperatureSensor sensor;

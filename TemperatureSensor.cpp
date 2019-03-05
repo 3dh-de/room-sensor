@@ -1,16 +1,17 @@
 #include "TemperatureSensor.h"
 #include <assert.h>
+#include <math.h>
 
 void TemperatureSensor::clearTemperature(void)
 {
     temperatureInitialized = false;
-    temperatureValue       = 0.0;
+    temperatureValue       = NAN;
 }
 
 void TemperatureSensor::clearHumidity(void)
 {
     humidityInitialized = false;
-    humidityValue       = 0.0;
+    humidityValue       = NAN;
 }
 
 void TemperatureSensor::setTemperatureUnit(TemperatureUnits unit)
@@ -33,8 +34,12 @@ void TemperatureSensor::setHumidity(float percent)
     humidityInitialized = true;
 }
 
+/**
+ * Basic unit tests for interface methods
+ */
 bool TestTemperatureSensor::runTests()
 {
+    assert(std::isnan(sensor.temperature()) == true);
     assert(sensor.isTemperatureValid() == false);
     assert(sensor.isHumidityValid() == false);
 
