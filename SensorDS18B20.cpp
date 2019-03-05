@@ -3,6 +3,8 @@
  */
 #include "SensorDS18B20.h"
 
+#define TEMPERATURE_PRECISION 9
+
 // Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
 OneWire oneWire(ONEWIRE_IN);
 
@@ -131,7 +133,7 @@ std::list<SensorDS18B20::SensorData> SensorDS18B20::sensorsAvailable(void)
         DeviceScratchPad tmp;
         bool             connected = sensors.isConnected(it->address, tmp);
 
-        Serial.printf("[ds18b20] #%d with address %x:%x:%x:%x:%x:%x:%x:%x is %s\n", it->index,
+        Serial.printf("[ds18b20] device: %s address: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X state: %s\n", it->name.c_str(),
                       it->address[0], it->address[1], it->address[2], it->address[3], it->address[4], it->address[5], it->address[6], it->address[7],
                       connected ? "ONLINE" : "OFFLINE. Skipping this sensor.");
 
@@ -140,6 +142,7 @@ std::list<SensorDS18B20::SensorData> SensorDS18B20::sensorsAvailable(void)
         } else {
             sensorList.erase(it);
         }
+        ++it;
     }
     return sensorList;
 }
@@ -159,7 +162,7 @@ std::list<SensorDS18B20::SensorData> SensorDS18B20::sensorsRegistered(void)
 }
 
 /**
- * Scan for devices and update the sensors list
+ * Scan for devices and update the registered sensors list
  */
 bool SensorDS18B20::searchSensors(void)
 {
@@ -172,16 +175,53 @@ bool SensorDS18B20::searchSensors(void)
 
     Serial.printf("[ds18b20] searching available devices (current count: %d)...\n", sensors.getDeviceCount());
 
-    std::list<SensorData> availableSensorList;
-    std::list<SensorData> newSensorList;
-    DeviceAddress         newAddress;
-    int                   newIndex = -1;
+    std::map<std::string, SensorData>::iterator it = registeredSensors.begin();
+    std::list<SensorData>                       newSensorList;
+    SensorData                                  newDevice;
+    DeviceAddress                               newAddress;
+    int                                         newIndex = -1;
 
+    // first mark all previously registered sensors as offline
+    while (it != registeredSensors.end()) {
+        it->second.index     = -1;
+        it->second.connected = false;
+        ++it;
+    }
+
+    // search for new devices and check each address against registered sensors
     while (sensors.getAddress(newAddress, ++newIndex)) {
-        newSensorList.push_back(SensorData(newIndex, newAddress));
+        newDevice = SensorData(newIndex, newAddress);
+        newSensorList.push_back(newDevice);
 
-        Serial.printf("[ds18b20] #%d found address %x:%x:%x:%x:%x:%x:%x:%x\n", newIndex,
-                      newAddress[0], newAddress[1], newAddress[2], newAddress[3], newAddress[4], newAddress[5], newAddress[6], newAddress[7]);
+        sensors.setResolution(newAddress, TEMPERATURE_PRECISION);
+
+        it                            = registeredSensors.begin();
+        bool addressAlreadyRegistered = false;
+
+        while (it != registeredSensors.end()) {
+            // mark each matching registered sensor as "connected"
+            if (it->second.isEqual(newAddress)) {
+                addressAlreadyRegistered = true;
+                it->second.index         = newIndex; // update the index
+                it->second.connected     = true;
+                if (it->second.name.find("sensor") != std::string::npos) {
+                    char tmp[255];
+                    it->second.name = std::string("sensor") + std::string(itoa(newIndex, tmp, 10));
+                } else {
+                    newDevice.name = it->second.name;
+                }
+                break;
+            }
+            ++it;
+        }
+        // add new sensor missing in previously registered sensors list
+        if (!addressAlreadyRegistered) {
+            registeredSensors[newDevice.name] = newDevice;
+        }
+
+        Serial.printf("[ds18b20] device: %s address: %02X:%02X:%02X:%02X:%02X:%02X:%02X:%02X state: %s\n", newDevice.name.c_str(),
+                      newAddress[0], newAddress[1], newAddress[2], newAddress[3], newAddress[4], newAddress[5], newAddress[6], newAddress[7],
+                      addressAlreadyRegistered ? "already registered" : "new device");
     }
 
     return true;
@@ -194,7 +234,18 @@ bool SensorDS18B20::searchSensors(void)
  */
 bool SensorDS18B20::readSensorTemperature(SensorData& data, float offset)
 {
-    return false;
+    sensors.requestTemperatures();
+
+    float temperature = sensors.getTempC(data.address);
+    if (temperature == DEVICE_DISCONNECTED_C) {
+        Serial.printf("[ds18b20] failed to read temperature value of device: %s\n", data.name.c_str());
+        return false;
+    }
+
+    data.lastTemperature = temperature;
+    Serial.printf("[ds18b20] device: %s  current temperature: %02.1f °C\n", data.name.c_str(), temperature);
+
+    return true;
 }
 
 /**

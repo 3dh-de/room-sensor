@@ -105,6 +105,8 @@ void setup()
     // first read often gets invalid values
     sensorDHT.temperature();
     sensorDHT.humidity();
+
+    sensorDS18B20.sensorsAvailable();
 }
 
 /**
@@ -115,7 +117,7 @@ void loop()
     float temperature = sensorDHT.temperature();
     float humidity    = sensorDHT.humidity();
 
-    sensorDS18B20.sensorsAvailable();
+    Serial.printf("DS18B20 sensor #0  temperature: %02.1f\n", sensorDS18B20.temperature());
 
     display.clearDisplay();
     display.setCursor(8, 0);

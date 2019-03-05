@@ -16,11 +16,11 @@
 #include <assert.h>
 #include <list>
 #include <map>
-#include <sstream>
 #include <stdlib.h>
 #include <string>
 
 #define ONEWIRE_IN D4 // what pin the DS18b20 is connected to
+
 
 /**
  * Read and display temperature via Dallas DS18b20 1wire sensor
@@ -66,11 +66,6 @@ public:
             }
 
             if (deviceName.empty()) {
-                /*
-                std::ostringstream str;
-                str << "sensor" << index;
-                name = str.str();
-                */
                 char tmp[255];
                 name = std::string("sensor") + std::string(itoa(index, tmp, 10));
             }
