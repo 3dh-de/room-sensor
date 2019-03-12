@@ -95,6 +95,7 @@ void setup()
     delay(1000);
 
     mqttClient.createPublishTopic("temperature", "/arbeitszimmer/temperature", MqttClient::SENSOR);
+    mqttClient.createPublishTopic("temperature_heater", "/arbeitszimmer/temperature_heater", MqttClient::SENSOR);
     mqttClient.createPublishTopic("humidity", "/arbeitszimmer/humidity", MqttClient::SENSOR);
     mqttClient.createPublishTopic("lights", "/arbeitszimmer/lights", MqttClient::SWITCH);
     mqttClient.createSubscribeTopic("lights", "/arbeitszimmer/lights/set", MqttClient::SWITCH);
@@ -117,7 +118,7 @@ void loop()
     float temperature = sensorDHT.temperature();
     float humidity    = sensorDHT.humidity();
 
-    Serial.printf("DS18B20 sensor #0  temperature: %02.1f\n", sensorDS18B20.temperature());
+    float temperatureHeater = sensorDS18B20.temperature();
 
     display.clearDisplay();
     display.setCursor(8, 0);
@@ -144,6 +145,10 @@ void loop()
     display.display();
 
     // publish temp+humidity via MQTT
+    char temperatureHeaterStr[5];
+    sprintf(temperatureHeaterStr, "%02.1f", temperatureHeater);
+    mqttClient.publish("temperature_heater", temperatureHeaterStr);
+
     Serial.print(F("\nSending temp val "));
     Serial.print(temperatureStr);
     Serial.print("...");
