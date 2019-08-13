@@ -10,7 +10,8 @@
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\libraries\\ESP8266WiFi\\**",
                 "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\variants\\nodemcu\\**",
-                "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\tools\\xtensa-lx106-elf-gcc\\1.20.0-26-gb404fb9-2\\xtensa-lx106-elf\\include\\c++\\4.8.2\\profile"
+                "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\tools\\xtensa-lx106-elf-gcc\\1.20.0-26-gb404fb9-2\\xtensa-lx106-elf\\include\\c++\\4.8.2\\profile",
+                "C:\\Users\\chris\\AppData\\Local\\Arduino15\\packages\\esp8266\\hardware\\esp8266\\2.4.1\\**"
             ],
             "forcedInclude": [],
             "intelliSenseMode": "clang-x64",
